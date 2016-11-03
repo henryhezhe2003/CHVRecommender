@@ -86,13 +86,13 @@ class Clustering (sc: SparkContext) {
       println(s"getNgramRdd ***")
       val hNgrams = new mutable.LinkedHashMap[String,Ngram]()
       val gramId = new AtomicInteger()
-      val hPreNgram =  firstStageNgram.value
+//      val hPreNgram =  firstStageNgram.value
       itr.foreach(sents => {
         gramId.set(0)
         if (firstStageNgram == null) {
           Nlp.generateNgram(sents, gramId, hNgrams)
         }else{
-          Nlp.generateNgramStage2(sents,gramId,hNgrams,hPreNgram)
+          Nlp.generateNgramStage2(sents,gramId,hNgrams,firstStageNgram.value)
         }
       })
       val sNgrams = hNgrams.values.toSeq.filter(_.tfAll>tfFilterInPartition)
@@ -748,13 +748,13 @@ object Clustering {
     println("original ngram:")
     val fw = if (Conf.saveNgram2file.length > 0) new FileWriter(Conf.saveNgram2file,false) else null
     if (fw != null) fw.write(f"${Ngram.getVectorHead()}\n")
-    ngramShown.foreach(v => {
+    if (ngramShown!=null) ngramShown.foreach(v => {
       println(f"${v._1.toStringVector()}")
       if (fw != null) fw.write(f"${v._1.toStringVector()}\n")
     })
-    fw.close()
+    if (fw != null)fw.close()
     println("ngram vector:")
-    ngramShown.foreach(v => {
+    if (ngramShown!=null)ngramShown.foreach(v => {
       println(f"${v._1.key}%-15s\t${v._2.toArray.map(f => f"${f}%.2f").mkString("\t")}")
     })
 
