@@ -168,7 +168,7 @@ class Clustering (sc: SparkContext) {
       var ngrams = Utils.readObjectFromFile[Array[Ngram]](Conf.ngramSaveFile).filter(v=>{
         !v.text.matches(Conf.stopwordRegex) && v.tfAll>Conf.stag2TfFilter
       })
-     /* Utils.writeObjectToFile(Conf.ngramSaveFile + ".no_bow", ngrams.map(g=>{
+      /*Utils.writeObjectToFile(Conf.ngramSaveFile + ".no_bow", ngrams.map(g=>{
         g.context.wordsInbags=null;
         g
       }))
@@ -741,21 +741,23 @@ object Clustering {
 
     println(s"** ngramCntAll ${ngramCntAll} ngramCntUmls ${ngramCntUmls} ngramCntChv ${ngramCntChv}  ngramCntChvTest ${ngramCntChvTest} **")
     val ngramShown = if (Conf.showOrgNgramNum>0){
-      rddVector.filter(kv => {
+      clustering.getVectorRdd(rddNgram4Train, Conf.useFeatures4Train).filter(kv => {
         Conf.showOrgNgramOfN.contains(kv._1.n) && Ngram.ShowOrgNgramOfPosRegex.matcher(kv._1.posString).matches() && Ngram.ShowOrgNgramOfTextRegex.matcher(kv._1.text).matches()
       }).takeSample(false,Conf.showOrgNgramNum,Seed)
     } else null
-    println("original ngram:")
+    println(s"original ngram: ngramShown count is ${ngramShown.size}")
     val fw = if (Conf.saveNgram2file.length > 0) new FileWriter(Conf.saveNgram2file,false) else null
     if (fw != null) fw.write(f"${Ngram.getVectorHead()}\n")
     if (ngramShown!=null) ngramShown.foreach(v => {
-      println(f"${v._1.toStringVector()}")
-      if (fw != null) fw.write(f"${v._1.toStringVector()}\n")
+      if (fw != null)
+        fw.write(f"${v._1.toStringVector()}\n")
+      else
+        println(f"${v._1.toStringVector()}")
     })
     if (fw != null)fw.close()
     println("ngram vector:")
     if (ngramShown!=null)ngramShown.foreach(v => {
-      println(f"${v._1.key}%-15s\t${v._2.toArray.map(f => f"${f}%.2f").mkString("\t")}")
+      //println(f"${v._1.key}%-15s\t${v._2.toArray.map(f => f"${f}%.2f").mkString("\t")}")
     })
 
     val rddVectorDbl = rddVector.map(_._2).persist()
